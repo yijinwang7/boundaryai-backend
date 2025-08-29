@@ -33,6 +33,7 @@ Same description ⇒ same survey (fetched from DB).
 ### 1) Database
 ```bash
 docker compose up -d db
+```
 
 ### 2) Backend
 ```bash
