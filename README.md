@@ -86,3 +86,13 @@ LLM integration with safe fallback: optional OpenAI; deterministic mock when no 
 Security & robustness: simple Bearer token check; CORS restricted to the frontend origin.
 
 Frontend UX: one-click Generate Survey that auto-fills title/description/questions from the API.
+
+## Attribution & Copyright
+
+This project includes starter UI code and the challenge description provided by BoundaryAI:
+- Source repository: https://github.com/BoundaryAIRecruitment/BackendTask
+
+All original materials from BoundaryAI remain the property of their respective owners. My contributions include the FastAPI backend, database models/migrations, API route(s), integration glue, deployment configuration, and any additional code or documentation I authored for this evaluation.
+
+If BoundaryAI later publishes a license for the starter repository, that license governs the corresponding files. Until then, these BoundaryAI-provided assets are used here solely for the purpose of completing the technical assessment.
+
