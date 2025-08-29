@@ -24,6 +24,53 @@ export const CreateSurveyProviderMock = ({ children }) => {
     setQuestions((prev) => [...prev, newQuestion]);
   };
 
+  //------------------------------------------- newly added
+function mapBackendToLocal(q, idx) {
+  // Convert backend types
+  const base = {
+    id: Date.now() + idx + Math.random(), // unique-ish client id
+    title: q.text || "",
+    saved: false,
+    options: [],
+  };
+
+  if (q.type === "multiple_choice") {
+    return {
+      ...base,
+      type: "multipleChoice", // internal type
+      // convert ["A","B"] -> [{id, text}, {id, text}]
+      options: (q.choices || []).map((c, i) => ({
+        id: Date.now() + i + Math.random(),
+        text: c,
+      })),
+    };
+  }
+
+  if (q.type === "rating") {
+    return {
+      ...base,
+      type: "rating",
+    };
+  }
+
+  // default: open text -> short answer
+  return {
+    ...base,
+    type: "shortAnswer",
+  };
+}
+
+const loadSurveyFromBackend = (survey, description) => {
+  setSurveyTitle(survey?.title || "");
+  setSurveyDescription(description || "");
+
+  const mapped = (survey?.questions || []).map(mapBackendToLocal);
+  setQuestions(mapped);
+};
+  // ---------------------------------------------
+
+
+
   const handleDeleteQuestion = (index) => {
     setQuestions((prev) => prev.filter((_, i) => i !== index));
   };
@@ -180,6 +227,7 @@ export const CreateSurveyProviderMock = ({ children }) => {
         onDragEnd,
         dupList,
         handleCreateSurvey,
+        loadSurveyFromBackend,
       }}
     >
       {children}

@@ -4,7 +4,11 @@ import { PlusIcon2 } from "./Icons";
 import QuestionList from "./QuestionList";
 import { motion } from "framer-motion";
 
+const API_BASE  = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000";
+const API_TOKEN = process.env.REACT_APP_API_TOKEN || "dev-token";
+
 const CreateSurvey = () => {
+
   const {
     questions,
     defaultQuestionType,
@@ -13,20 +17,91 @@ const CreateSurvey = () => {
     surveyTitle,
     surveyDescription,
     addNewQuestion,
+    loadSurveyFromBackend,
   } = useCreateSurveyProvider();
 
   const [titleLength, setTitleLength] = useState(0);
   const [descriptionLength, setDescriptionLength] = useState(0);
   const [titleError, setTitleError] = useState("");
   const [descriptionError, setDescriptionError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setTitleLength(surveyTitle?.length || 0);
     setDescriptionLength(surveyDescription?.length || 0);
   }, [surveyTitle, surveyDescription]);
 
+  async function handleGenerate() {
+    console.log("handleGenerate start", { API_BASE });
+//const input = window.prompt("Enter a short survey description:");
+
+
+    const input = window.prompt("Enter a short survey description:");
+    console.log("User input:", input);
+    console.log("POSTing to:", `${API_BASE}/api/surveys/generate`);
+    if (!input || input.trim().length < 5) {
+    alert("Please enter at least 5 characters.");
+    return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/surveys/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${API_TOKEN}`,
+        },
+        body: JSON.stringify({ description: input.trim() }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json(); // { id, title, questions: [...] }
+
+      if (typeof loadSurveyFromBackend === "function") {
+        loadSurveyFromBackend(data, input.trim());
+      } else {
+        // fallback: still fill title/description
+        setSurveyTitle?.(data.title || "");
+        setSurveyDescription?.(input.trim());
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Failed to generate survey");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="flex h-full font-switzer lg:overflow-auto scrollbar-style flex-col gap-4 sm:gap-6 sm:p-4">
+      {/* Header + Generate button */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Create a New Survey</h1>
+        {/*<button*/}
+        {/*    type="button"*/}
+        {/*  onClick={handleGenerate}*/}
+        {/*  disabled={loading}*/}
+        {/*  className="bg-[#6851a7] text-white px-4 py-2 rounded-md shadow-sm"*/}
+        {/*>*/}
+        {/*  {loading ? "Generating..." : "Generate Survey"}*/}
+        {/*</button>*/}
+        <button
+         type="button"
+         onClick={(e) => {           // add logs to verify it runs
+         e.preventDefault();
+         e.stopPropagation();
+         console.log("Generate clicked");
+         handleGenerate();
+         }}
+         disabled={loading}
+         className="bg-[#6851a7] text-white px-4 py-2 rounded-md shadow-sm"
+         >
+         {loading ? "Generating..." : "Generate Survey"}
+         </button>
+
+      </div>
+
+      {/* Title & Description group */}
       <div className="flex flex-col space-y-6">
         {/* Title Input */}
         <motion.div
@@ -78,13 +153,10 @@ const CreateSurvey = () => {
             <p className={`text-[10px] ${descriptionLength > 90 ? "text-amber-500" : "text-gray-400"}`}>
               {descriptionLength}/100
             </p>
-            {descriptionError && (
-              <p className="text-red-500 text-xs">{descriptionError}</p>
-            )}
+            {descriptionError && <p className="text-red-500 text-xs">{descriptionError}</p>}
           </div>
         </motion.div>
       </div>
-
 
       {/* Question List */}
       <div className="flex-1">
@@ -93,7 +165,7 @@ const CreateSurvey = () => {
 
       {/* Add Question Button */}
       <motion.div
-        whileHover={{ scale: 1.01, borderColor: '#6851a7 ' }}
+        whileHover={{ scale: 1.01, borderColor: "#6851a7" }}
         className="border-2 py-4 md:py-5 lg:py-6 rounded-[12px] flex justify-center border-dotted border-[#6851a7] bg-[#6851a7]/5 transition-all duration-300"
       >
         <motion.button
