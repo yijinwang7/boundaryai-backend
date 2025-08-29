@@ -1,82 +1,83 @@
-# Backend Task
+# Backend Implementation
 
-This task is designed to evaluate your backend skills, API design, code quality, architecture, and creativity. The goal is to augment the provided isolated frontend page with a fully working survey-generation feature.
+Generate a survey from a short description, store it in Postgres, and auto-fill the frontend.  
+Same description ⇒ same survey (fetched from DB).
 
-To do so you are asked to create an AI-powered survey generator that transforms a user’s brief description into a fully structured questionnaire, covering diverse question types (multiple-choice, ratings, open-text, etc.) tailored to their needs.
+---
 
-## Description
+## Tech Choices
 
-You have been given an isolated version of one page of our frontend (React + TypeScript): [https://github.com/BoundaryAIRecruitment/BackendTask](https://github.com/BoundaryAIRecruitment/BackendTask)
+**Why FastAPI (over Flask)**
+- Pydantic models for typed request/response validation.
+- Built-in dependency injection (clean DB session handling).
+- Auto-generated docs (`/docs`, `/redoc`) and fast ASGI server (Uvicorn).
 
-Your job is to:
+**Key Libraries**
+- **FastAPI** + **Uvicorn** — web framework & server.
+- **SQLAlchemy** + **psycopg2-binary** — ORM & Postgres driver.
+- **pydantic / pydantic-settings / python-dotenv** — validation & config via env.
+- **openai** — LLM integration if `OPENAI_API_KEY` is present.
+- **slowapi** — simple rate limiting (off by default).
 
-* **Add a “Generate Survey” button to the page:**
+**Design Notes**
+- Clear separation: routes (`main.py`), schemas (`schemas.py`), models (`models.py`), services (`services/`), DB wiring (`db.py`).
+- LLM is **pluggable**: uses OpenAI when a key exists, otherwise a **deterministic mock** so the app runs without secrets.
+- **Caching** by input description with a DB uniqueness constraint.
 
-  * When clicked, it should prompt the user to enter a short survey description (e.g. “Customer satisfaction for an online store”).
-  * Once submitted, the frontend should call your new backend endpoint.
+---
 
-* **Implement the backend (using Flask or FastAPI, your choice):**
+## Setup & Run
 
-  * **Route(s):**
+**Prereqs:** Python 3.11, Node 18+, Docker (for Postgres)
 
-    * A POST endpoint (e.g. `/api/surveys/generate`) that accepts the user’s description.
-  * **Logic & Integration:**
+### 1) Database
+```bash
+docker compose up -d db
+```
 
-    * Use the OpenAI API, or another LLM of your choice to generate a structured survey.
-    * It is recommended that the output be JSON-structured (e.g. `{ "title": "...", "questions": [ { "type": "...", "text": "..." }, … ] }`).
-  * **Storage:** save generated surveys for repeated prompts.
+### 2) Backend
+```bash
+python3.11 -m venv venv
+source venv/bin/activate
+pip install -r backend/requirements.txt
+```
+Create a .env file in the project root:
+```bash
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/surveys
+API_TOKEN=dev-token
+CORS_ORIGINS=http://localhost:3000
+OPENAI_API_KEY=        # optional
+RATE_LIMIT=10/minute
+```
+Run the API:
+```bash
+python -m uvicorn backend.app.main:app --reload --port 8000
+```
 
-    * Save the input and output in a PostGreSQL database; if an input is the same, you should fetch it instead of generate it.
-  * **Auto-fill:**
+### 3) Frontend
+```bash
+cd frontend
+npm install
+```
+Create frontend/.env.local:
+```bash
+REACT_APP_API_BASE_URL=http://localhost:8000
+REACT_APP_API_TOKEN=dev-token
+```
 
-    * Return the generated JSON so the frontend can render the new survey form automatically.
+Run:
+```bash
+npm start
+```
 
-## Tech Stack
+## Areas of Focus
 
-* **Language:** Python (3.11)
-* **Framework:** Flask or FastAPI
-* **AI Integration:** OpenAI API (or equivalent LLM)
+Clean architecture: routes ↔ services ↔ models separated; DB via DI (get_db).
 
-## What We are Evaluating
+Reliable storage & idempotency: unique constraint on description; race-safe get-or-create.
 
-* **Architecture & Design**
+LLM integration with safe fallback: optional OpenAI; deterministic mock when no key is provided.
 
-  * Logical separation of concerns (routes, services, models), clear dependency injection or config management.
-* **Code Quality**
+Security & robustness: simple Bearer token check; CORS restricted to the frontend origin.
 
-  * Clean, modular, well-documented code following best practices and style guides.
-* **API Design**
-
-  * RESTful principles, clear request/response schemas, proper status codes and error messages.
-* **Integration & Robustness**
-
-  * Correct handling of API keys, timeouts, retries, input validation, and error cases.
-* **Performance & Security**
-
-  * Efficient request handling, minimal cold-start overhead, sanitization of inputs.
-* **Documentation**
-
-  * Clear README explaining setup, env vars, how to run, and any design decisions.
-
-## Submission
-
-Provide one of the following:
-
-* A GitHub repository (with public or private access) or a ZIP archive containing your code.
-* (Optional) A deployed version of your backend (e.g. on Heroku, Vercel Functions, or similar) with URL.
-
-Include a brief README that covers:
-
-* Tech choices (why Flask vs. FastAPI, any libraries you picked)
-* Setup & Run instructions (install, env vars, start server)
-* Areas of focus (What did you implement that other candidates might not have?)
-
-## Bonus Points
-
-* **Dockerization:** supply a Dockerfile and easy docker-compose setup.
-* **Testing:** Unit and/or integration tests covering core functionality.
-* **Authentication:** simple token check on your API.
-* **Rate limiting:** prevent abuse of the generation endpoint.
-* **Security:**
-
-Feel free to innovate beyond the spec. If you see an opportunity to improve UX or backend architecture, show us. Good luck!
+Frontend UX: one-click Generate Survey that auto-fills title/description/questions from the API.
