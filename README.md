@@ -1,7 +1,7 @@
 # Backend Implementation
 
 Generate a survey from a short description, store it in Postgres, and auto-fill the frontend.  
-Same description ⇒ same survey (fetched from DB).
+Same description ⇒ same survey (fetched from DB). Deployed URL: [boundaryai-backend.vercel.app](https://boundaryai-backend.vercel.app/)
 
 ---
 
@@ -62,6 +62,11 @@ npm install
 Create frontend/.env.local:
 ```bash
 REACT_APP_API_BASE_URL=http://localhost:8000
+REACT_APP_API_TOKEN=dev-token
+```
+frontend/.env.local if using render and vercel to deploy:
+```bash
+REACT_APP_API_BASE_URL= https://boundaryai-backend.onrender.com
 REACT_APP_API_TOKEN=dev-token
 ```
 
