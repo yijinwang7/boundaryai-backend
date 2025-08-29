@@ -40,7 +40,14 @@ python3.11 -m venv venv
 source venv/bin/activate
 pip install -r backend/requirements.txt
 ```
-
+Create a .env file in the project root:
+```bash
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/surveys
+API_TOKEN=dev-token
+CORS_ORIGINS=http://localhost:3000
+OPENAI_API_KEY=        # optional
+RATE_LIMIT=10/minute
+```
 Run the API:
 ```bash
 python -m uvicorn backend.app.main:app --reload --port 8000
@@ -51,6 +58,12 @@ python -m uvicorn backend.app.main:app --reload --port 8000
 cd frontend
 npm install
 ```
+Create frontend/.env.local:
+```bash
+REACT_APP_API_BASE_URL=http://localhost:8000
+REACT_APP_API_TOKEN=dev-token
+```
+
 Run:
 ```bash
 npm start
